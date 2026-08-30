@@ -87,10 +87,9 @@ km-proposal-demo/
 The installer:
 
 1. creates `.env` from `.env.example` if needed;
-2. generates a random MCP bearer token;
-3. seeds a project-local demo vault at `runtime/vault`;
-4. builds the one-shot ingestion image with Firecrawl AnyDoc;
-5. starts Vault Cortex MCP.
+2. seeds a project-local demo vault at `runtime/vault`;
+3. builds the one-shot ingestion image with Firecrawl AnyDoc;
+4. starts Vault Cortex MCP.
 
 MCP endpoint:
 
@@ -98,7 +97,7 @@ MCP endpoint:
 http://localhost:9705/mcp
 ```
 
-Use `MCP_AUTH_TOKEN` from `.env`.
+*(Optional: Set `MCP_AUTH_TOKEN` in `.env` if bearer authentication is desired).*
 
 ## 2. Configure MCP in your Agent CLI
 
@@ -111,9 +110,6 @@ Add the `km-vault` MCP server to your agent CLI configuration:
     "km-vault": {
       "type": "remote",
       "url": "http://localhost:9705/mcp",
-      "headers": {
-        "Authorization": "Bearer <YOUR_MCP_AUTH_TOKEN>"
-      },
       "enabled": true
     }
   }
@@ -125,10 +121,7 @@ Add the `km-vault` MCP server to your agent CLI configuration:
 {
   "mcpServers": {
     "km-vault": {
-      "url": "http://localhost:9705/mcp",
-      "headers": {
-        "Authorization": "Bearer <YOUR_MCP_AUTH_TOKEN>"
-      }
+      "url": "http://localhost:9705/mcp"
     }
   }
 }
@@ -138,8 +131,9 @@ Add the `km-vault` MCP server to your agent CLI configuration:
 ```toml
 [mcp_servers.km_vault]
 url = "http://localhost:9705/mcp"
-headers = { "Authorization" = "Bearer <YOUR_MCP_AUTH_TOKEN>" }
 ```
+
+*(Note: If you configure `MCP_AUTH_TOKEN`, add `"headers": { "Authorization": "Bearer <YOUR_TOKEN>" }` to your config).*
 
 ## 3. Load the KM skill into the ACP agent
 

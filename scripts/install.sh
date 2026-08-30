@@ -19,16 +19,14 @@ docker compose version >/dev/null || { echo "Docker Compose v2 is required." >&2
 
 if [[ ! -f .env ]]; then
   cp .env.example .env
-  TOKEN="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
-  python3 - "$TOKEN" "$(id -u)" "$(id -g)" <<'PY'
+  python3 - "$(id -u)" "$(id -g)" <<'PY'
 from pathlib import Path
 import sys
 p=Path('.env')
-s=p.read_text().replace('MCP_AUTH_TOKEN=CHANGE_ME','MCP_AUTH_TOKEN='+sys.argv[1])
-s=s.replace('PUID=1000','PUID='+sys.argv[2]).replace('PGID=1000','PGID='+sys.argv[3])
+s=p.read_text().replace('PUID=1000','PUID='+sys.argv[1]).replace('PGID=1000','PGID='+sys.argv[2])
 p.write_text(s)
 PY
-  echo "Created .env with a generated MCP token."
+  echo "Created .env from .env.example."
 else
   echo "Using existing .env; it was not overwritten."
 fi
@@ -64,7 +62,7 @@ if [[ "$NO_START" -eq 0 ]]; then
   fi
   PORT="$(awk -F= '$1=="MCP_PORT"{print $2}' .env | tail -1)"
   PORT="${PORT:-9705}"
-  TOKEN="$(awk -F= '$1=="MCP_AUTH_TOKEN"{print $2}' .env | tail -1)"
+  TOKEN="$(awk -F= '$1=="MCP_AUTH_TOKEN"{print $2}' .env 2>/dev/null | tail -1)"
   
   echo
   echo "============================================================"
@@ -77,7 +75,8 @@ if [[ "$NO_START" -eq 0 ]]; then
   echo "--- MCP Configuration Templates for Agent CLIs ---"
   echo
   echo "[1] OpenCode (~/.config/opencode/opencode.json):"
-  cat <<EOF
+  if [[ -n "$TOKEN" ]]; then
+    cat <<EOF
 "mcp": {
   "km-vault": {
     "type": "remote",
@@ -89,9 +88,21 @@ if [[ "$NO_START" -eq 0 ]]; then
   }
 }
 EOF
+  else
+    cat <<EOF
+"mcp": {
+  "km-vault": {
+    "type": "remote",
+    "url": "http://localhost:${PORT}/mcp",
+    "enabled": true
+  }
+}
+EOF
+  fi
   echo
   echo "[2] Claude Desktop / Claude Code (claude_desktop_config.json / mcp.json):"
-  cat <<EOF
+  if [[ -n "$TOKEN" ]]; then
+    cat <<EOF
 "mcpServers": {
   "km-vault": {
     "url": "http://localhost:${PORT}/mcp",
@@ -101,13 +112,29 @@ EOF
   }
 }
 EOF
+  else
+    cat <<EOF
+"mcpServers": {
+  "km-vault": {
+    "url": "http://localhost:${PORT}/mcp"
+  }
+}
+EOF
+  fi
   echo
   echo "[3] Codex (~/.codex/config.toml):"
-  cat <<EOF
+  if [[ -n "$TOKEN" ]]; then
+    cat <<EOF
 [mcp_servers.km_vault]
 url = "http://localhost:${PORT}/mcp"
 headers = { "Authorization" = "Bearer ${TOKEN}" }
 EOF
+  else
+    cat <<EOF
+[mcp_servers.km_vault]
+url = "http://localhost:${PORT}/mcp"
+EOF
+  fi
   echo "============================================================"
 else
   echo "Configuration validated and ingest image built; persistent containers not started."
