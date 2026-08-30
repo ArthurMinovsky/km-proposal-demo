@@ -16,6 +16,8 @@ done
 
 command -v docker >/dev/null || { echo "Docker is required." >&2; exit 1; }
 docker compose version >/dev/null || { echo "Docker Compose v2 is required." >&2; exit 1; }
+command -v curl >/dev/null || { echo "curl is required." >&2; exit 1; }
+command -v python3 >/dev/null || { echo "Python 3 is required." >&2; exit 1; }
 
 if [[ ! -f .env ]]; then
   cp .env.example .env
@@ -29,6 +31,28 @@ PY
   echo "Created .env from .env.example."
 else
   echo "Using existing .env; it was not overwritten."
+fi
+
+TOKEN="$(awk -F= '$1=="MCP_AUTH_TOKEN"{print $2}' .env | tail -1)"
+if [[ -z "$TOKEN" || "$TOKEN" == "CHANGE_ME" ]]; then
+  TOKEN="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+  python3 - "$TOKEN" <<'PY'
+from pathlib import Path
+import re
+import sys
+p = Path('.env')
+s = p.read_text()
+s, replacements = re.subn(
+    r'^MCP_AUTH_TOKEN=.*$',
+    'MCP_AUTH_TOKEN=' + sys.argv[1],
+    s,
+    flags=re.MULTILINE,
+)
+if replacements != 1:
+    raise SystemExit('Expected exactly one MCP_AUTH_TOKEN entry in .env')
+p.write_text(s)
+PY
+  echo "Generated an MCP bearer token in .env."
 fi
 
 mkdir -p runtime/mcp-data runtime/obsidian-config
@@ -55,14 +79,30 @@ if [[ "$WITH_SYNC" -eq 1 ]]; then
 fi
 
 if [[ "$NO_START" -eq 0 ]]; then
+  FILE_PORT="$(awk -F= '$1=="MCP_PORT"{print $2}' .env | tail -1)"
+  PORT="${MCP_PORT:-${FILE_PORT:-9705}}"
   if [[ "$WITH_SYNC" -eq 1 ]]; then
     docker compose --profile obsidian-sync up -d
   else
     docker compose up -d mcp
   fi
-  PORT="$(awk -F= '$1=="MCP_PORT"{print $2}' .env | tail -1)"
-  PORT="${PORT:-9705}"
-  TOKEN="$(awk -F= '$1=="MCP_AUTH_TOKEN"{print $2}' .env 2>/dev/null | tail -1)"
+
+  for attempt in {1..30}; do
+    if curl -fsS "http://127.0.0.1:${PORT}/healthz" >/dev/null 2>&1; then
+      break
+    fi
+    if ! docker compose ps --status running --services | grep -qx 'mcp'; then
+      echo "Vault Cortex exited before becoming healthy." >&2
+      docker compose logs --no-color --tail=100 mcp >&2 || true
+      exit 1
+    fi
+    if [[ "$attempt" -eq 30 ]]; then
+      echo "Vault Cortex did not become healthy within 60 seconds." >&2
+      docker compose logs --no-color --tail=100 mcp >&2 || true
+      exit 1
+    fi
+    sleep 2
+  done
   
   echo
   echo "============================================================"
@@ -75,8 +115,7 @@ if [[ "$NO_START" -eq 0 ]]; then
   echo "--- MCP Configuration Templates for Agent CLIs ---"
   echo
   echo "[1] OpenCode (~/.config/opencode/opencode.json):"
-  if [[ -n "$TOKEN" ]]; then
-    cat <<EOF
+  cat <<EOF
 "mcp": {
   "km-vault": {
     "type": "remote",
@@ -88,21 +127,9 @@ if [[ "$NO_START" -eq 0 ]]; then
   }
 }
 EOF
-  else
-    cat <<EOF
-"mcp": {
-  "km-vault": {
-    "type": "remote",
-    "url": "http://localhost:${PORT}/mcp",
-    "enabled": true
-  }
-}
-EOF
-  fi
   echo
   echo "[2] Claude Desktop / Claude Code (claude_desktop_config.json / mcp.json):"
-  if [[ -n "$TOKEN" ]]; then
-    cat <<EOF
+  cat <<EOF
 "mcpServers": {
   "km-vault": {
     "url": "http://localhost:${PORT}/mcp",
@@ -112,29 +139,13 @@ EOF
   }
 }
 EOF
-  else
-    cat <<EOF
-"mcpServers": {
-  "km-vault": {
-    "url": "http://localhost:${PORT}/mcp"
-  }
-}
-EOF
-  fi
   echo
   echo "[3] Codex (~/.codex/config.toml):"
-  if [[ -n "$TOKEN" ]]; then
-    cat <<EOF
+  cat <<EOF
 [mcp_servers.km_vault]
 url = "http://localhost:${PORT}/mcp"
 headers = { "Authorization" = "Bearer ${TOKEN}" }
 EOF
-  else
-    cat <<EOF
-[mcp_servers.km_vault]
-url = "http://localhost:${PORT}/mcp"
-EOF
-  fi
   echo "============================================================"
 else
   echo "Configuration validated and ingest image built; persistent containers not started."

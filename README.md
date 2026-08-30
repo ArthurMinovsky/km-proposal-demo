@@ -83,6 +83,7 @@ From https://github.com/ArthurMinovsky/km-proposal-demo.git, read the README.md 
 ## Prerequisites
 
 - Docker with Docker Compose v2.
+- Python 3 and `curl` on the host (used to generate the local token and verify MCP health).
 - An ACP/Agent CLI capable of using an MCP server and a local skill.
 - For the optional `obsidian-server`: an active Obsidian Sync subscription and a disposable/demo remote vault.
 
@@ -95,9 +96,10 @@ From https://github.com/ArthurMinovsky/km-proposal-demo.git, read the README.md 
 The installer:
 
 1. creates `.env` from `.env.example` if needed;
-2. seeds a project-local demo vault at `runtime/vault`;
-3. builds the one-shot ingestion image with Firecrawl AnyDoc;
-4. starts Vault Cortex MCP.
+2. generates a local MCP bearer token if `MCP_AUTH_TOKEN` is blank or set to `CHANGE_ME`;
+3. seeds a project-local demo vault at `runtime/vault`;
+4. builds the one-shot ingestion image with Firecrawl AnyDoc;
+5. starts Vault Cortex MCP and waits for its health check to pass.
 
 MCP endpoint:
 
@@ -105,7 +107,7 @@ MCP endpoint:
 http://localhost:9705/mcp
 ```
 
-*(Optional: Set `MCP_AUTH_TOKEN` in `.env` if bearer authentication is desired).*
+The installer stores a generated bearer token in `.env`; use it in your Agent CLI configuration.
 
 ## 2. Configure MCP in your Agent CLI
 
@@ -118,6 +120,9 @@ Add the `km-vault` MCP server to your agent CLI configuration:
     "km-vault": {
       "type": "remote",
       "url": "http://localhost:9705/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_MCP_AUTH_TOKEN>"
+      },
       "enabled": true
     }
   }
@@ -129,7 +134,10 @@ Add the `km-vault` MCP server to your agent CLI configuration:
 {
   "mcpServers": {
     "km-vault": {
-      "url": "http://localhost:9705/mcp"
+      "url": "http://localhost:9705/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_MCP_AUTH_TOKEN>"
+      }
     }
   }
 }
@@ -139,9 +147,10 @@ Add the `km-vault` MCP server to your agent CLI configuration:
 ```toml
 [mcp_servers.km_vault]
 url = "http://localhost:9705/mcp"
+headers = { "Authorization" = "Bearer <YOUR_MCP_AUTH_TOKEN>" }
 ```
 
-*(Note: If you configure `MCP_AUTH_TOKEN`, add `"headers": { "Authorization": "Bearer <YOUR_TOKEN>" }` to your config).*
+Use the generated `MCP_AUTH_TOKEN` from `.env` in each template.
 
 ## 3. Load the KM skill into the ACP agent
 

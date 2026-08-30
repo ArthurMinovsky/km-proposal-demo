@@ -1,7 +1,7 @@
 # Proposal Session Checklist
 
 1. `./scripts/install.sh`
-2. Connect the ACP/Agent CLI to `http://localhost:8000/mcp` using `MCP_AUTH_TOKEN` from `.env`.
+2. Connect the ACP/Agent CLI to `http://localhost:9705/mcp` using `MCP_AUTH_TOKEN` from `.env`.
 3. Load `skill/km-management/SKILL.md`.
 4. Run `./scripts/ingest.sh demo-imports/project-facts.csv`.
 5. Ask the agent: `Search KM for "Retrieval order".`
