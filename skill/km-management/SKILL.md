@@ -21,19 +21,20 @@ The KM stack does not call an LLM. It provides:
 
 ## Ingest workflow
 
-For a local file that should become searchable knowledge:
+For a local file or directory that should become searchable knowledge:
 
 1. Run:
-   `./scripts/ingest.sh <file>`
+   `./scripts/ingest.sh <file_or_directory>` (or `./scripts/ingest.sh --local <file_or_directory>` to run without Docker)
 2. The ingest tool:
    - preserves the original under `source/imported/<DOC-ID>/`;
    - converts supported office/PDF formats to Markdown with Firecrawl AnyDoc;
+   - parses code files, Jupyter notebooks, and configuration statically into structured Markdown;
    - passes Markdown/text through directly;
    - computes a stable SHA-256 based document ID;
    - writes normalized Markdown under `knowledge/imported/`;
    - writes a heading-tree `*.index.md`;
    - writes machine metadata under `.km/ingest/`.
-3. Search the new content through Vault Cortex MCP.
+3. Search the new content through Vault Cortex MCP (or locally via `./scripts/search.sh <query>`).
 4. Read the normalized note or original source metadata when exact provenance matters.
 
 There is no review/promotion gate in this demo. Ingested knowledge becomes searchable immediately.
@@ -43,6 +44,7 @@ There is no review/promotion gate in this demo. Ingested knowledge becomes searc
 - **Office & Documents** (via Firecrawl AnyDoc): Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, text-based PDF.
 - **Source Code & Web Apps** (Static parsing): JavaScript (`.js`, `.mjs`, `.cjs`, `.jsx`), TypeScript (`.ts`, `.tsx`), Python (`.py`), Rust (`.rs`), Go (`.go`), HTML (`.html`), Styling (`.css`, `.scss`, `.sass`, `.less`), Configuration (`.json`, `.yaml`, `.yml`, `.toml`), Scripts (`.sh`, `.bash`), Dockerfiles, and more.
 - **Jupyter Notebooks** (`.ipynb`): Markdown and Python code cells indexed with cell headings.
+- **Directories**: Recursive traversal and multi-file batch ingestion.
 - **Markdown & Plain text**: Local passthrough.
 
 ### Static Codebase Ingestion Principle
@@ -56,13 +58,14 @@ Scanned/image-only PDFs are out of scope because local AnyDoc does not perform O
 
 ## Retrieval workflow
 
-1. Search with the Vault Cortex MCP search tool.
-2. Prefer exact IDs, titles, paths, or metadata when known.
-3. Read the smallest relevant Markdown note.
-4. If the note is imported/derived and provenance matters, inspect its `source` and `source_revision` frontmatter.
-5. Expand to other notes only when necessary.
+1. **MCP Retrieval**: Search with the Vault Cortex MCP search tool when the MCP server is running (`http://localhost:9705/mcp`).
+2. **Local CLI Fallback**: When MCP container is offline or in local inspection mode, run `./scripts/search.sh "<query>"` or `node tools/search.mjs "<query>"` (supports `--id <DOC-ID>`, `--json`, `--limit <N>`).
+3. Prefer exact IDs, titles, paths, or metadata when known.
+4. Read the smallest relevant Markdown note in `knowledge/imported/`.
+5. If the note is imported/derived and provenance matters, inspect its `source` and `source_revision` frontmatter.
+6. Expand to other notes only when necessary.
 
-The MCP index is a locator. Markdown files and preserved source files remain durable data.
+The MCP index / local search is a locator. Markdown files and preserved source files remain durable data.
 
 ## Writing workflow
 

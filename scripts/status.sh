@@ -4,7 +4,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 echo "== Compose =="
-docker compose --profile obsidian-sync --profile tools ps || true
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  docker compose --profile obsidian-sync --profile tools ps || true
+else
+  echo "Docker is unavailable or daemon is not running; reporting local filesystem status."
+fi
 
 echo
 echo "== MCP health =="

@@ -3,12 +3,33 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-[[ $# -eq 1 ]] || { echo "Usage: ./scripts/ingest.sh <file>" >&2; exit 2; }
-INPUT="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$1")"
+USE_LOCAL=false
+INPUT_PATH=""
+
+for arg in "$@"; do
+  case "$arg" in
+    --local) USE_LOCAL=true ;;
+    -h|--help)
+      echo "Usage: ./scripts/ingest.sh [--local] <file_or_directory>"
+      exit 0
+      ;;
+    *)
+      if [[ -z "$INPUT_PATH" ]]; then
+        INPUT_PATH="$arg"
+      else
+        echo "Unexpected argument: $arg" >&2
+        exit 2
+      fi
+      ;;
+  esac
+done
+
+[[ -n "$INPUT_PATH" ]] || { echo "Usage: ./scripts/ingest.sh [--local] <file_or_directory>" >&2; exit 2; }
+
+INPUT="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$INPUT_PATH")"
 [[ -e "$INPUT" ]] || { echo "Path not found: $INPUT" >&2; exit 2; }
 
-USE_LOCAL=false
-if [[ "${1:-}" == "--local" ]] || ! command -v docker >/dev/null 2>&1 || ! docker compose version >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+if ! command -v docker >/dev/null 2>&1 || ! docker compose version >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
   USE_LOCAL=true
 fi
 

@@ -116,7 +116,13 @@ function processSingleFile(filePath, vault) {
   }
 
   const headings = [];
+  let inCodeBlock = false;
   for (const [i, line] of markdown.split(/\r?\n/).entries()) {
+    if (line.trim().startsWith("```")) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
     const m = /^(#{1,6})\s+(.+?)\s*$/.exec(line);
     if (m) headings.push({ level: m[1].length, title: m[2], line: i + 1 });
   }

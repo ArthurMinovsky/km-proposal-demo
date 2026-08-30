@@ -205,6 +205,23 @@ The normalized Markdown frontmatter records:
 
 Vault Cortex then sees the new Markdown and makes it available to MCP search.
 
+## 5. Search and query KM knowledge
+
+You can search and retrieve ingested knowledge through two complementary interfaces:
+
+### A. Via MCP Server (Online / Connected Agent)
+When the MCP server is running (`http://localhost:9705/mcp`), your agent CLI uses the native MCP search and read tools:
+- `search_vault(query)` — Semantic and keyword locator across the vault.
+- `read_note(path)` — Read normalized notes and provenance metadata.
+
+### B. Via Local Search CLI (Offline / Sandboxed Agent)
+When running offline or directly in the terminal without Docker:
+```bash
+./scripts/search.sh "Retrieval order"
+./scripts/search.sh --id DOC-C53E
+./scripts/search.sh "signUp" --json
+```
+
 ## Supported file conversion
 
 The ingestion container handles:
