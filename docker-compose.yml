@@ -1,0 +1,61 @@
+name: km-proposal-demo
+
+services:
+  mcp:
+    image: ghcr.io/aliasunder/vault-cortex:${VAULT_CORTEX_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:${MCP_PORT:-9705}}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
+      VAULT_PATH: /vault
+      EMBEDDING_ENABLED: ${EMBEDDING_ENABLED:-false}
+      RERANK_MODE: ${RERANK_MODE:-none}
+      MEMORY_ENABLED: ${MEMORY_ENABLED:-false}
+      FILE_TOOLS_ENABLED: ${FILE_TOOLS_ENABLED:-true}
+      PROTECTED_PATHS: ${PROTECTED_PATHS:-}
+      TZ: ${TZ:-Asia/Bangkok}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_DIR: /data/logs
+    volumes:
+      - ${VAULT_HOST_PATH:-./runtime/vault}:/vault:rw
+      - ${MCP_DATA_PATH:-./runtime/mcp-data}:/data
+    ports:
+      - "${MCP_PORT:-9705}:8000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  obsidian-server:
+    image: ghcr.io/belphemur/obsidian-headless-sync-docker:${OBSIDIAN_SERVER_TAG:-latest}
+    profiles: ["obsidian-sync"]
+    restart: unless-stopped
+    environment:
+      OBSIDIAN_AUTH_TOKEN: ${OBSIDIAN_AUTH_TOKEN:-}
+      VAULT_NAME: ${VAULT_NAME:-}
+      VAULT_PASSWORD: ${VAULT_PASSWORD:-}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      DEVICE_NAME: ${DEVICE_NAME:-km-proposal-demo}
+      CONFLICT_STRATEGY: ${CONFLICT_STRATEGY:-merge}
+      SYNC_MODE: ${SYNC_MODE:-bidirectional}
+      SYNC_CONFIGS: ${SYNC_CONFIGS:-}
+      EXCLUDED_FOLDERS: ${SYNC_EXCLUDED_FOLDERS:-}
+      FILE_TYPES: ${SYNC_FILE_TYPES:-}
+    volumes:
+      - ${VAULT_HOST_PATH:-./runtime/vault}:/vault:rw
+      - ${OBSIDIAN_CONFIG_PATH:-./runtime/obsidian-config}:/home/obsidian/.config
+
+  ingest:
+    build:
+      context: .
+      dockerfile: Dockerfile.ingest
+    profiles: ["tools"]
+    environment:
+      VAULT_PATH: /vault
+    volumes:
+      - ${VAULT_HOST_PATH:-./runtime/vault}:/vault:rw
+      - ./tools:/app:ro
+    entrypoint: ["node", "/app/ingest.mjs"]

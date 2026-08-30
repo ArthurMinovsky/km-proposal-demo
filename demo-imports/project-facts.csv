@@ -1,0 +1,6 @@
+topic,value
+Storage model,Markdown-first
+Retrieval order,Index then exact match then keyword search
+Agent interface,MCP
+Agent orchestration,ACP Agent CLI plus KM skill
+Demo ingestion,File to normalized Markdown to searchable knowledge
