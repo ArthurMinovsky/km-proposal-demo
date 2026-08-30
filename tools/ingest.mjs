@@ -12,12 +12,21 @@ function extractCodeHeadings(code, ext) {
     if (ext === ".py") {
       const m = /^(?:def|class|async def)\s+([a-zA-Z0-9_]+)/.exec(line);
       if (m) headings.push({ level: 2, title: `${line.trim().split('(')[0]}()`, line: i + 1 });
-    } else if (ext === ".js" || ext === ".ts" || ext === ".mjs") {
-      const m = /^(?:export\s+)?(?:async\s+)?(?:function\s+([a-zA-Z0-9_]+)|class\s+([a-zA-Z0-9_]+)|const\s+([a-zA-Z0-9_]+)\s*=\s*(?:async\s*)?\()/.exec(line);
+    } else if ([".js", ".ts", ".mjs", ".cjs", ".jsx", ".tsx"].includes(ext)) {
+      const m = /^(?:export\s+)?(?:async\s+)?(?:function\s+([a-zA-Z0-9_]+)|class\s+([a-zA-Z0-9_]+)|(?:const|let|var)\s+([a-zA-Z0-9_]+)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[a-zA-Z0-9_]+)\s*=>|(?:const|let|var)\s+([a-zA-Z0-9_]+)\s*=\s*function)/.exec(line);
       if (m) {
-        const name = m[1] || m[2] || m[3];
+        const name = m[1] || m[2] || m[3] || m[4];
         headings.push({ level: 2, title: `symbol: ${name}`, line: i + 1 });
       }
+    } else if (ext === ".rs") {
+      const m = /^(?:pub\s+)?(?:async\s+)?(?:fn|struct|enum|trait|impl)\s+([a-zA-Z0-9_]+)/.exec(line);
+      if (m) headings.push({ level: 2, title: `symbol: ${m[1]}`, line: i + 1 });
+    } else if (ext === ".go") {
+      const m = /^func\s+(?:\([^)]+\)\s+)?([a-zA-Z0-9_]+)/.exec(line);
+      if (m) headings.push({ level: 2, title: `symbol: ${m[1]}()`, line: i + 1 });
+    } else if ([".css", ".scss", ".sass", ".less"].includes(ext)) {
+      const m = /^([.#]?[a-zA-Z0-9_-]+(?:,\s*[.#]?[a-zA-Z0-9_-]+)*)\s*\{/.exec(line);
+      if (m) headings.push({ level: 2, title: `rule: ${m[1].trim()}`, line: i + 1 });
     }
   }
   return headings;
@@ -44,6 +53,18 @@ function processSingleFile(filePath, vault) {
   let markdown = "";
   let converter = "passthrough";
   let extractedHeadings = [];
+
+  const codeExts = [
+    ".py", ".js", ".mjs", ".cjs", ".ts", ".jsx", ".tsx",
+    ".html", ".htm", ".css", ".scss", ".sass", ".less",
+    ".vue", ".svelte", ".rs", ".go", ".java", ".c", ".cpp",
+    ".h", ".hpp", ".cs", ".php", ".rb", ".swift", ".kt",
+    ".sql", ".sh", ".bash", ".zsh", ".fish", ".yml", ".yaml",
+    ".json", ".json5", ".toml", ".xml", ".graphql", ".gql",
+    ".env", ".env.example", ".dockerfile", ".gitignore"
+  ];
+
+  const isDockerfile = originalName.toLowerCase() === "dockerfile" || originalName.toLowerCase().startsWith("dockerfile.");
 
   if (ext === ".md" || ext === ".markdown") {
     markdown = raw.toString("utf8");
@@ -72,9 +93,9 @@ function processSingleFile(filePath, vault) {
     } catch (e) {
       markdown = `# ${originalName}\n\n\`\`\`json\n${raw.toString("utf8")}\n\`\`\``;
     }
-  } else if ([".py", ".js", ".mjs", ".cjs", ".ts", ".html", ".css", ".sh", ".yml", ".yaml", ".json"].includes(ext)) {
+  } else if (codeExts.includes(ext) || isDockerfile) {
     converter = "code-converter";
-    const lang = ext.replace(".", "");
+    const lang = isDockerfile ? "dockerfile" : ext.replace(".", "");
     const codeText = raw.toString("utf8");
     const symHeadings = extractCodeHeadings(codeText, ext);
     markdown = `# Code: ${originalName}\n\nLanguage: \`${lang}\`\nSize: \`${raw.length} bytes\`\n\n\`\`\`${lang}\n${codeText}\n\`\`\``;
@@ -98,6 +119,9 @@ function processSingleFile(filePath, vault) {
   for (const [i, line] of markdown.split(/\r?\n/).entries()) {
     const m = /^(#{1,6})\s+(.+?)\s*$/.exec(line);
     if (m) headings.push({ level: m[1].length, title: m[2], line: i + 1 });
+  }
+  if (extractedHeadings && extractedHeadings.length > 0) {
+    headings.push(...extractedHeadings);
   }
   if (!headings.length) {
     headings.push({ level: 1, title: base, line: 1 });

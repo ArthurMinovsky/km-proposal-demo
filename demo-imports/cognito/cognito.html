@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SignUp New User</title>
+
+  <!-- Bootstrap -->
+  <link href="dist/my-app.css" rel="stylesheet"> 
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+  <script src="https://code.jquery.com/jquery-3.2.1.js"></script>
+</head>
+
+<body>
+  <nav class="navbar navbar-default">
+    <div class="container"> 
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">Sign Up</a> 
+      </div>
+    </div>
+    <!-- /.container-fluid --> 
+  </nav>
+  <section>
+    <div class="container">
+      <!--form-->
+      <form class="form-container" id="registration-form" enctype="multipart/form-data" novalidate>
+        <div class="row">
+          <label for="name">First Name </label>
+          <input type="text" name="firstname" placeholder="First Name" id="firstname" required minlength="2" data-text="non-digit" autofocus>
+          <span id="firstname-error"></span>
+        </div>        
+        <div class="row">
+          <label for="name">Last Name</label>        
+          <input type="text" name="lastname" placeholder="Last Name" id="lastname" required minlength="2" data-text="non-digit">
+          <span id="lastname-error"></span>
+        </div>       
+        <div class="row">    
+          <label for="email-address">Email address</label>
+          <input type="email" name="customer-email" placeholder="example@domain.com" id="email-address" required>
+          <span id="email-address-error"></span>
+          <span id="unique-email-error" class="warning"></span>
+        </div>
+        <div class="row">
+            <label for="business-ph">Business Phone</label>
+              <input type="tel" name="customer-phone" placeholder="+64 123 4567" id="business-ph" required>
+              <span id="business-ph-error"></span>
+        </div>    
+        <div class="row">
+          <input type="submit" value="Register" class="button-form">
+        </div>
+      </form>
+    </div>
+  </section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/node-uuid/1.4.8/uuid.min.js"></script>
+<script type="text/javascript" src="dist/my-app.js"></script>
+
+</body>
+</html>

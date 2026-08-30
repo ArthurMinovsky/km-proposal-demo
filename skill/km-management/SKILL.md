@@ -40,9 +40,17 @@ There is no review/promotion gate in this demo. Ingested knowledge becomes searc
 
 ## Supported demo inputs
 
-AnyDoc handles Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and text-based PDF files.
+- **Office & Documents** (via Firecrawl AnyDoc): Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, text-based PDF.
+- **Source Code & Web Apps** (Static parsing): JavaScript (`.js`, `.mjs`, `.cjs`, `.jsx`), TypeScript (`.ts`, `.tsx`), Python (`.py`), Rust (`.rs`), Go (`.go`), HTML (`.html`), Styling (`.css`, `.scss`, `.sass`, `.less`), Configuration (`.json`, `.yaml`, `.yml`, `.toml`), Scripts (`.sh`, `.bash`), Dockerfiles, and more.
+- **Jupyter Notebooks** (`.ipynb`): Markdown and Python code cells indexed with cell headings.
+- **Markdown & Plain text**: Local passthrough.
 
-Markdown and plain text are handled directly by the demo tool.
+### Static Codebase Ingestion Principle
+
+When converting a codebase to KM:
+- **Do not execute or build the code**: Ingesting knowledge is a static analysis and documentation transformation process. Never run `npm build`, `cargo run`, `python script.py`, or test suites merely to convert files to KM notes.
+- **Read source only**: Pure static file reading, hash computation, symbol extraction, and frontmatter generation are sufficient.
+- **Preserve structure**: Maintain the original relative directory hierarchy, AST/symbol index trees, and provenance links.
 
 Scanned/image-only PDFs are out of scope because local AnyDoc does not perform OCR.
 
