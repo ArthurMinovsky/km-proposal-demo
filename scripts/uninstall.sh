@@ -40,8 +40,12 @@ else
 fi
 
 if [[ "$REMOVE_IMAGES" -eq 1 ]] && command -v docker >/dev/null; then
-  VC_TAG="$(awk -F= '$1=="VAULT_CORTEX_TAG"{print $2}' .env 2>/dev/null | tail -1)"
-  OS_TAG="$(awk -F= '$1=="OBSIDIAN_SERVER_TAG"{print $2}' .env 2>/dev/null | tail -1)"
+  VC_TAG="latest"
+  OS_TAG="latest"
+  if [[ -f .env ]]; then
+    VC_TAG="$(awk -F= '$1=="VAULT_CORTEX_TAG"{print $2}' .env | tail -1)"
+    OS_TAG="$(awk -F= '$1=="OBSIDIAN_SERVER_TAG"{print $2}' .env | tail -1)"
+  fi
   docker image rm "km-proposal-demo-ingest:latest" 2>/dev/null || true
   docker image rm "ghcr.io/aliasunder/vault-cortex:${VC_TAG:-latest}" 2>/dev/null || true
   docker image rm "ghcr.io/belphemur/obsidian-headless-sync-docker:${OS_TAG:-latest}" 2>/dev/null || true
