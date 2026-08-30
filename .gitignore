@@ -2,3 +2,4 @@
 runtime/
 .demo-install-state
 .DS_Store
+*.pdf
