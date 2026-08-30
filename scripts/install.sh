@@ -64,9 +64,51 @@ if [[ "$NO_START" -eq 0 ]]; then
   fi
   PORT="$(awk -F= '$1=="MCP_PORT"{print $2}' .env | tail -1)"
   PORT="${PORT:-9705}"
-  echo "MCP endpoint: http://localhost:${PORT}/mcp"
-  echo "Health:       http://localhost:${PORT}/healthz"
-  echo "Ingest:       ./scripts/ingest.sh <file>"
+  TOKEN="$(awk -F= '$1=="MCP_AUTH_TOKEN"{print $2}' .env | tail -1)"
+  
+  echo
+  echo "============================================================"
+  echo "  KM Proposal Demo MCP Server is Ready!"
+  echo "============================================================"
+  echo "Endpoint: http://localhost:${PORT}/mcp"
+  echo "Health:   http://localhost:${PORT}/healthz"
+  echo "Ingest:   ./scripts/ingest.sh <file_or_directory>"
+  echo
+  echo "--- MCP Configuration Templates for Agent CLIs ---"
+  echo
+  echo "[1] OpenCode (~/.config/opencode/opencode.json):"
+  cat <<EOF
+"mcp": {
+  "km-vault": {
+    "type": "remote",
+    "url": "http://localhost:${PORT}/mcp",
+    "headers": {
+      "Authorization": "Bearer ${TOKEN}"
+    },
+    "enabled": true
+  }
+}
+EOF
+  echo
+  echo "[2] Claude Desktop / Claude Code (claude_desktop_config.json / mcp.json):"
+  cat <<EOF
+"mcpServers": {
+  "km-vault": {
+    "url": "http://localhost:${PORT}/mcp",
+    "headers": {
+      "Authorization": "Bearer ${TOKEN}"
+    }
+  }
+}
+EOF
+  echo
+  echo "[3] Codex (~/.codex/config.toml):"
+  cat <<EOF
+[mcp_servers.km_vault]
+url = "http://localhost:${PORT}/mcp"
+headers = { "Authorization" = "Bearer ${TOKEN}" }
+EOF
+  echo "============================================================"
 else
   echo "Configuration validated and ingest image built; persistent containers not started."
 fi

@@ -100,7 +100,48 @@ http://localhost:9705/mcp
 
 Use `MCP_AUTH_TOKEN` from `.env`.
 
-## 2. Load the KM skill into the ACP agent
+## 2. Configure MCP in your Agent CLI
+
+Add the `km-vault` MCP server to your agent CLI configuration:
+
+### OpenCode (`~/.config/opencode/opencode.json`)
+```json
+{
+  "mcp": {
+    "km-vault": {
+      "type": "remote",
+      "url": "http://localhost:9705/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_MCP_AUTH_TOKEN>"
+      },
+      "enabled": true
+    }
+  }
+}
+```
+
+### Claude Desktop / Claude Code (`claude_desktop_config.json` / `mcp.json`)
+```json
+{
+  "mcpServers": {
+    "km-vault": {
+      "url": "http://localhost:9705/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_MCP_AUTH_TOKEN>"
+      }
+    }
+  }
+}
+```
+
+### Codex (`~/.codex/config.toml`)
+```toml
+[mcp_servers.km_vault]
+url = "http://localhost:9705/mcp"
+headers = { "Authorization" = "Bearer <YOUR_MCP_AUTH_TOKEN>" }
+```
+
+## 3. Load the KM skill into the ACP agent
 
 Copy:
 
@@ -108,11 +149,11 @@ Copy:
 skill/km-management/
 ```
 
-into the skill location used by your ACP/Agent CLI.
+into the skill location used by your ACP/Agent CLI (e.g. `~/.claude/skills/`, `~/.codex/skills/`, `~/.config/opencode/skills/`, or `~/.gemini/config/skills/`).
 
 The skill contains workflow instructions only. It installs no daemon and calls no model provider.
 
-## 3. Ingest a file or directory
+## 4. Ingest a file or directory
 
 Included demo:
 
