@@ -72,6 +72,14 @@ km-proposal-demo/
 
 # Installation
 
+## Quick Install Prompt for AI Agent CLIs
+
+If you are using an AI coding agent (Claude Code, OpenCode, Codex, Gemini CLI, Cursor, etc.), paste this prompt into your CLI to have the agent set up the environment automatically:
+
+```text
+From https://github.com/ArthurMinovsky/km-proposal-demo.git, read the README.md to install and start the Docker containers, configure the Vault Cortex MCP server in this CLI, and load the km-management skill.
+```
+
 ## Prerequisites
 
 - Docker with Docker Compose v2.
@@ -257,6 +265,14 @@ This shows container state, MCP health, local runtime sizes, and imported-docume
 # Uninstall / Restore to Normal
 
 Uninstall is intentionally a first-class part of this PoC.
+
+## Quick Uninstall Prompt for AI Agent CLIs
+
+To have your AI coding agent clean up the demo, stop containers, and remove local configurations, paste this prompt:
+
+```text
+Uninstall the KM proposal demo from https://github.com/ArthurMinovsky/km-proposal-demo.git. Run ./scripts/uninstall.sh --restore-all to stop and remove all demo Docker containers, clean up the local runtime vault, and remove the km-vault MCP configuration and km-management skill from this CLI.
+```
 
 ## Safe stop — keep demo data
 
