@@ -235,6 +235,34 @@ unstructured/office file
 → immediate agent retrieval
 ```
 
+# Demo Test Cases: Cross-Session Knowledge Retrieval
+
+These test cases demonstrate bidirectional knowledge transformation (**Codebase $\leftrightarrow$ KM $\leftrightarrow$ Document/PoC**) and verify that ingested knowledge persists across completely independent chat sessions.
+
+## 1. Codebase → KM → Report
+
+**Step 1 (Session 1):** Paste this prompt into your agent CLI:
+```text
+Please use github.com/sindhu-ss/cognito for convert codebase to KM.
+```
+
+**Step 2 (Session 2):** Kill the conversation or start a new chat, then paste this prompt:
+```text
+From KM MCP, generate cognito document.pdf
+```
+
+## 2. Report / Paper → KM → Codebase
+
+**Step 1 (Session 1):** Paste this prompt into your agent CLI:
+```text
+Please use https://arxiv.org/pdf/2608.25923 paper to KM.
+```
+
+**Step 2 (Session 2):** Kill the conversation or start a new chat, then paste this prompt:
+```text
+From KM MCP, generate paper explained.html
+```
+
 # Optional Obsidian server
 
 `obsidian-server` is behind the `obsidian-sync` Compose profile.
